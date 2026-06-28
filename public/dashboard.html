@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amean — لوحة التحكم</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #15241F;
+    --paper: #F6F4EE;
+    --card: #FFFFFF;
+    --brand: #0E6F5C;
+    --brand-deep: #0A4F41;
+    --brand-soft: #E4F1EC;
+    --amber: #C9842A;
+    --line: #E3DFD3;
+    --muted: #6B7570;
+
+    --st-rdy-bg: #E5F3EA; --st-rdy-fg: #1A7A42;
+    --st-early-bg: #FDF1DD; --st-early-fg: #B4791A;
+    --st-exp-bg: #FBE7E5;  --st-exp-fg: #B5392C;
+    --st-ok-bg: #ECEAE3;   --st-ok-fg: #5F6660;
+    --st-reim-bg: #E3EBF7; --st-reim-fg: #2E5FA3;
+    --st-noref-bg: #F1E6F4; --st-noref-fg: #7A3F8C;
+    --st-unk-bg: #EFEFEF;  --st-unk-fg: #888888;
+    --st-review-bg: #FDF1DD; --st-review-fg: #B4791A;
+  }
+  * { box-sizing: border-box; }
+  body[dir="ltr"] { font-family: 'Inter', sans-serif; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: 'Tajawal', sans-serif;
+    min-height: 100vh;
+  }
+  header {
+    background: var(--brand-deep); color: #fff;
+    padding: 18px 28px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .mark {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--brand), var(--amber));
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 18px; color: #fff;
+    flex-shrink: 0;
+  }
+  .brand-name { font-weight: 700; font-size: 20px; letter-spacing: 0.5px; }
+  .lang-toggle {
+    background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25);
+    color: #fff; padding: 7px 16px; border-radius: 999px; cursor: pointer;
+    font-family: inherit; font-size: 14px; font-weight: 500;
+  }
+  .lang-toggle:hover { background: rgba(255,255,255,0.22); }
+
+  main { max-width: 1080px; margin: 0 auto; padding: 28px 20px 60px; }
+  .section { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 24px; margin-bottom: 24px; }
+  .section h2 { margin: 0 0 4px; font-size: 19px; }
+  .section .sub { color: var(--muted); font-size: 14px; margin: 0 0 18px; }
+
+  .sync-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+  .chip {
+    border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px;
+    display: flex; align-items: center; gap: 10px; background: #FAF9F5; flex: 1; min-width: 160px;
+  }
+  .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: #C7C2B2; flex-shrink: 0; }
+  .chip.done .dot { background: var(--brand); }
+  .chip .label { font-size: 13px; font-weight: 500; }
+  .chip .meta { font-size: 11px; color: var(--muted); }
+
+  button.action {
+    background: var(--brand); color: #fff; border: none; border-radius: 10px;
+    padding: 11px 22px; font-size: 14.5px; font-weight: 700; cursor: pointer;
+    font-family: inherit;
+  }
+  button.action:hover { background: var(--brand-deep); }
+  button.action:disabled { background: #B9C7C2; cursor: not-allowed; }
+  button.action.secondary { background: var(--amber); }
+  button.action.secondary:hover { background: #A86A1F; }
+
+  .actions-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .summary { display: flex; gap: 16px; margin: 18px 0; flex-wrap: wrap; }
+  .stat { background: var(--brand-soft); border-radius: 12px; padding: 14px 18px; flex: 1; min-width: 140px; }
+  .stat .n { font-size: 26px; font-weight: 900; color: var(--brand-deep); }
+  .stat .l { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-top: 10px; }
+  th, td { padding: 10px 12px; text-align: start; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 12.5px; }
+  tbody tr:hover { background: #FAF9F5; }
+  .badge { display: inline-block; padding: 4px 11px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .badge.rdy { background: var(--st-rdy-bg); color: var(--st-rdy-fg); }
+  .badge.early { background: var(--st-early-bg); color: var(--st-early-fg); }
+  .badge.exp { background: var(--st-exp-bg); color: var(--st-exp-fg); }
+  .badge.ok { background: var(--st-ok-bg); color: var(--st-ok-fg); }
+  .badge.reim { background: var(--st-reim-bg); color: var(--st-reim-fg); }
+  .badge.noref { background: var(--st-noref-bg); color: var(--st-noref-fg); }
+  .badge.unk, .badge.review60 { background: var(--st-review-bg); color: var(--st-review-fg); }
+
+  .empty { color: var(--muted); font-size: 14px; text-align: center; padding: 30px 0; }
+  .filter-row { display: flex; gap: 8px; margin: 14px 0; flex-wrap: wrap; }
+  .filter-row select { font-family: inherit; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); font-size: 13px; }
+  .scroll-x { overflow-x: auto; }
+  .small-note { font-size: 12px; color: var(--muted); margin-top: 10px; }
+</style>
+</head>
+<body dir="rtl">
+
+<header>
+  <div class="brand">
+    <div class="mark">A</div>
+    <div class="brand-name">Amean</div>
+  </div>
+  <button class="lang-toggle" id="langToggle">EN</button>
+</header>
+
+<main>
+
+  <!-- ═══ التوالف والضايع ═══ -->
+  <section class="section">
+    <h2 data-i18n="lost_title">المخزون الضايع والتالف</h2>
+    <p class="sub" data-i18n="lost_sub">مطالبات أمازون عن وحدات اختفت أو تلفت في المستودعات ولسه متعوّضتش</p>
+
+    <div class="sync-row">
+      <div class="chip" id="chip-ledger">
+        <div class="dot"></div>
+        <div>
+          <div class="label" data-i18n="report_ledger">دفتر المخزون</div>
+          <div class="meta" id="meta-ledger" data-i18n="not_synced">لسه متسحبتش</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions-row">
+      <button class="action" id="btn-sync-ledger" data-i18n="btn_sync">🔗 اسحب من أمازون</button>
+      <button class="action secondary" id="btn-run-lost" data-i18n="btn_analyze" disabled>📊 حلّل البيانات</button>
+    </div>
+
+    <div id="lost-summary" class="summary" style="display:none"></div>
+    <div class="filter-row" id="lost-filter" style="display:none"></div>
+    <div class="scroll-x"><table id="lost-table" style="display:none">
+      <thead><tr>
+        <th data-i18n="col_date">التاريخ</th>
+        <th data-i18n="col_sku">SKU</th>
+        <th data-i18n="col_name">المنتج</th>
+        <th data-i18n="col_qty">الكمية</th>
+        <th data-i18n="col_reason">السبب</th>
+        <th data-i18n="col_days">الأيام</th>
+        <th data-i18n="col_status">الحالة</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <div class="empty" id="lost-empty" data-i18n="empty_lost">اسحب البيانات وحلّلها لتظهر النتائج هنا</div>
+  </section>
+
+  <!-- ═══ مطالبات المرتجعات ═══ -->
+  <section class="section">
+    <h2 data-i18n="returns_title">مطالبات المرتجعات</h2>
+    <p class="sub" data-i18n="returns_sub">حالات استردّ فيها العميل فلوسه، بس المنتج لسه مرجعش المخزن، ومحتاجة مطالبة</p>
+
+    <div class="sync-row">
+      <div class="chip" id="chip-reimbursements"><div class="dot"></div><div><div class="label" data-i18n="report_reim">استرداد التكاليف</div><div class="meta" id="meta-reimbursements" data-i18n="not_synced">لسه متسحبتش</div></div></div>
+      <div class="chip" id="chip-returns"><div class="dot"></div><div><div class="label" data-i18n="report_returns">المرتجعات المستلمة</div><div class="meta" id="meta-returns" data-i18n="not_synced">لسه متسحبتش</div></div></div>
+      <div class="chip" id="chip-finances"><div class="dot"></div><div><div class="label" data-i18n="report_finances">العمليات المالية</div><div class="meta" id="meta-finances" data-i18n="not_synced">لسه متسحبتش</div></div></div>
+    </div>
+
+    <div class="actions-row">
+      <button class="action" id="btn-sync-returns" data-i18n="btn_sync_all">🔗 اسحب كل التقارير من أمازون</button>
+      <button class="action secondary" id="btn-run-returns" data-i18n="btn_analyze" disabled>📊 حلّل البيانات</button>
+    </div>
+
+    <div id="returns-summary" class="summary" style="display:none"></div>
+    <div class="filter-row" id="returns-filter" style="display:none"></div>
+    <div class="scroll-x"><table id="returns-table" style="display:none">
+      <thead><tr>
+        <th data-i18n="col_order">رقم الأوردر</th>
+        <th data-i18n="col_sku">SKU</th>
+        <th data-i18n="col_name">المنتج</th>
+        <th data-i18n="col_refund_date">تاريخ الاسترداد</th>
+        <th data-i18n="col_days">الأيام</th>
+        <th data-i18n="col_amount">المبلغ</th>
+        <th data-i18n="col_status">الحالة</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <div class="empty" id="returns-empty" data-i18n="empty_returns">اسحب البيانات وحلّلها لتظهر النتائج هنا</div>
+    <p class="small-note" data-i18n="manual_note">⚠️ راجع كل سطر بعينك قبل رفع أي مطالبة فعلية لأمازون — النتائج هنا مساعدة لك، مش قرار نهائي.</p>
+  </section>
+
+</main>
+
+<script>
+const params = new URLSearchParams(location.search);
+const sellerId = params.get('seller');
+
+const T = {
+  ar: {
+    lost_title: 'المخزون الضايع والتالف', lost_sub: 'مطالبات أمازون عن وحدات اختفت أو تلفت في المستودعات ولسه متعوّضتش',
+    report_ledger: 'دفتر المخزون', not_synced: 'لسه متسحبتش',
+    btn_sync: '🔗 اسحب من أمازون', btn_analyze: '📊 حلّل البيانات',
+    col_date: 'التاريخ', col_sku: 'SKU', col_name: 'المنتج', col_qty: 'الكمية', col_reason: 'السبب', col_days: 'الأيام', col_status: 'الحالة',
+    empty_lost: 'اسحب البيانات وحلّلها لتظهر النتائج هنا',
+    returns_title: 'مطالبات المرتجعات', returns_sub: 'حالات استردّ فيها العميل فلوسه، بس المنتج لسه مرجعش المخزن، ومحتاجة مطالبة',
+    report_reim: 'استرداد التكاليف', report_returns: 'المرتجعات المستلمة', report_finances: 'العمليات المالية',
+    btn_sync_all: '🔗 اسحب كل التقارير من أمازون',
+    col_order: 'رقم الأوردر', col_refund_date: 'تاريخ الاسترداد', col_amount: 'المبلغ',
+    empty_returns: 'اسحب البيانات وحلّلها لتظهر النتائج هنا',
+    manual_note: '⚠️ راجع كل سطر بعينك قبل رفع أي مطالبة فعلية لأمازون — النتائج هنا مساعدة لك، مش قرار نهائي.',
+    syncing: 'بنسحب...', synced: 'آخر سحب: ', analyzing: 'بنحلل...',
+    st_rdy: 'جاهزة', st_early: 'انتظر', st_exp: 'انتهت الفرصة', st_ok: 'رجع للمخزن', st_reim: 'تم التعويض', st_noref: 'رجع بدون استرداد', st_unk: 'بدون تاريخ', st_review60: 'راجع يدوياً',
+    stat_ready_count: 'مطالبات جاهزة', stat_ready_units: 'وحدات مستحقة', stat_ready_amount: 'المبلغ المستحق (جنيه)',
+    all_statuses: 'كل الحالات'
+  },
+  en: {
+    lost_title: 'Lost & Damaged Inventory', lost_sub: 'Amazon claims for units lost or damaged in warehouses, not yet reimbursed',
+    report_ledger: 'Inventory Ledger', not_synced: 'Not synced yet',
+    btn_sync: '🔗 Sync from Amazon', btn_analyze: '📊 Analyze',
+    col_date: 'Date', col_sku: 'SKU', col_name: 'Product', col_qty: 'Qty', col_reason: 'Reason', col_days: 'Days', col_status: 'Status',
+    empty_lost: 'Sync and analyze data to see results here',
+    returns_title: 'Return Claims', returns_sub: 'Cases where the customer was refunded but the item was never returned to your warehouse',
+    report_reim: 'Reimbursements', report_returns: 'Customer Returns', report_finances: 'Financial Transactions',
+    btn_sync_all: '🔗 Sync all reports from Amazon',
+    col_order: 'Order ID', col_refund_date: 'Refund Date', col_amount: 'Amount',
+    empty_returns: 'Sync and analyze data to see results here',
+    manual_note: '⚠️ Review every row yourself before filing any actual claim with Amazon — these results assist you, they are not a final decision.',
+    syncing: 'Syncing...', synced: 'Last synced: ', analyzing: 'Analyzing...',
+    st_rdy: 'Ready', st_early: 'Wait', st_exp: 'Expired', st_ok: 'Returned', st_reim: 'Reimbursed', st_noref: 'Returned, no refund', st_unk: 'No date', st_review60: 'Manual review',
+    stat_ready_count: 'Ready claims', stat_ready_units: 'Units owed', stat_ready_amount: 'Amount owed (EGP)',
+    all_statuses: 'All statuses'
+  }
+};
+let lang = 'ar';
+
+function applyLang() {
+  document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (T[lang][key]) el.textContent = T[lang][key];
+  });
+  document.getElementById('langToggle').textContent = lang === 'ar' ? 'EN' : 'AR';
+}
+document.getElementById('langToggle').onclick = () => { lang = lang === 'ar' ? 'en' : 'ar'; applyLang(); renderAll(); };
+
+function fmt(n) { return Number(n || 0).toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US', { maximumFractionDigits: 0 }); }
+
+let lostResults = [], returnsResults = [];
+
+async function refreshStatus() {
+  const res = await fetch(`/api/status?seller=${encodeURIComponent(sellerId)}`);
+  const status = await res.json();
+  ['ledger','reimbursements','returns','finances'].forEach(key => {
+    const chip = document.getElementById('chip-' + key);
+    const meta = document.getElementById('meta-' + key);
+    if (status[key]) {
+      chip.classList.add('done');
+      const d = new Date(status[key].fetchedAt);
+      meta.textContent = T[lang].synced + d.toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US');
+    }
+  });
+  document.getElementById('btn-run-lost').disabled = !status.ledger;
+  document.getElementById('btn-run-returns').disabled = !(status.reimbursements && status.returns && status.finances);
+}
+
+async function syncReport(type, btn) {
+  btn.disabled = true;
+  const original = btn.textContent;
+  btn.textContent = T[lang].syncing;
+  try {
+    const res = await fetch(`/api/sync/${type}?seller=${encodeURIComponent(sellerId)}`, { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'فشل السحب');
+  } catch (e) {
+    alert(e.message);
+  }
+  btn.textContent = original;
+  btn.disabled = false;
+  await refreshStatus();
+}
+
+document.getElementById('btn-sync-ledger').onclick = (e) => syncReport('ledger', e.target);
+document.getElementById('btn-sync-returns').onclick = async (e) => {
+  const btn = e.target;
+  btn.disabled = true;
+  for (const type of ['reimbursements', 'returns', 'finances']) {
+    btn.textContent = T[lang].syncing + ' (' + type + ')';
+    try {
+      const res = await fetch(`/api/sync/${type}?seller=${encodeURIComponent(sellerId)}`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || type);
+    } catch (err) {
+      alert(err.message);
+      break;
+    }
+  }
+  btn.textContent = T[lang].btn_sync_all;
+  btn.disabled = false;
+  await refreshStatus();
+};
+
+document.getElementById('btn-run-lost').onclick = async (e) => {
+  e.target.textContent = T[lang].analyzing;
+  const res = await fetch(`/api/run/lost?seller=${encodeURIComponent(sellerId)}`, { method: 'POST' });
+  const data = await res.json();
+  e.target.textContent = T[lang].btn_analyze;
+  if (!res.ok) return alert(data.error);
+  lostResults = data.results;
+  renderLost();
+};
+
+document.getElementById('btn-run-returns').onclick = async (e) => {
+  e.target.textContent = T[lang].analyzing;
+  const res = await fetch(`/api/run/returns?seller=${encodeURIComponent(sellerId)}`, { method: 'POST' });
+  const data = await res.json();
+  e.target.textContent = T[lang].btn_analyze;
+  if (!res.ok) return alert(data.error);
+  returnsResults = data.results;
+  renderReturns();
+};
+
+function statusLabel(st) { return T[lang]['st_' + st] || st; }
+
+function renderLost(filterStatus) {
+  const rows = filterStatus ? lostResults.filter(r => r.status === filterStatus) : lostResults;
+  const table = document.getElementById('lost-table');
+  const empty = document.getElementById('lost-empty');
+  const tbody = table.querySelector('tbody');
+  tbody.innerHTML = '';
+
+  if (!lostResults.length) { table.style.display = 'none'; empty.style.display = 'block'; document.getElementById('lost-summary').style.display = 'none'; document.getElementById('lost-filter').style.display='none'; return; }
+
+  empty.style.display = 'none';
+  table.style.display = 'table';
+
+  const ready = lostResults.filter(r => r.status === 'rdy');
+  const totalQty = ready.reduce((s, r) => s + r.qty, 0);
+  document.getElementById('lost-summary').style.display = 'flex';
+  document.getElementById('lost-summary').innerHTML = `
+    <div class="stat"><div class="n">${ready.length}</div><div class="l">${T[lang].stat_ready_count}</div></div>
+    <div class="stat"><div class="n">${fmt(totalQty)}</div><div class="l">${T[lang].stat_ready_units}</div></div>
+  `;
+
+  const filterDiv = document.getElementById('lost-filter');
+  filterDiv.style.display = 'block';
+  filterDiv.innerHTML = `<select id="lost-status-filter">
+    <option value="">${T[lang].all_statuses}</option>
+    ${['rdy','review60','unk'].map(s => `<option value="${s}" ${filterStatus===s?'selected':''}>${statusLabel(s)}</option>`).join('')}
+  </select>`;
+  document.getElementById('lost-status-filter').onchange = (e) => renderLost(e.target.value);
+
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.date}</td><td>${r.sku}</td><td>${r.name}</td><td>${fmt(r.qty)}</td><td>${r.reasonAr}</td><td>${r.days ?? '-'}</td><td><span class="badge ${r.status}">${statusLabel(r.status)}</span></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderReturns(filterStatus) {
+  const rows = filterStatus ? returnsResults.filter(r => r.status === filterStatus) : returnsResults;
+  const table = document.getElementById('returns-table');
+  const empty = document.getElementById('returns-empty');
+  const tbody = table.querySelector('tbody');
+  tbody.innerHTML = '';
+
+  if (!returnsResults.length) { table.style.display = 'none'; empty.style.display = 'block'; document.getElementById('returns-summary').style.display = 'none'; document.getElementById('returns-filter').style.display='none'; return; }
+
+  empty.style.display = 'none';
+  table.style.display = 'table';
+
+  const ready = returnsResults.filter(r => r.status === 'rdy');
+  const totalAmt = ready.reduce((s, r) => s + r.owedAmt, 0);
+  document.getElementById('returns-summary').style.display = 'flex';
+  document.getElementById('returns-summary').innerHTML = `
+    <div class="stat"><div class="n">${ready.length}</div><div class="l">${T[lang].stat_ready_count}</div></div>
+    <div class="stat"><div class="n">${fmt(totalAmt)}</div><div class="l">${T[lang].stat_ready_amount}</div></div>
+  `;
+
+  const filterDiv = document.getElementById('returns-filter');
+  filterDiv.style.display = 'block';
+  filterDiv.innerHTML = `<select id="returns-status-filter">
+    <option value="">${T[lang].all_statuses}</option>
+    ${['rdy','early','exp','ok','reim','noref'].map(s => `<option value="${s}" ${filterStatus===s?'selected':''}>${statusLabel(s)}</option>`).join('')}
+  </select>`;
+  document.getElementById('returns-status-filter').onchange = (e) => renderReturns(e.target.value);
+
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.oid}</td><td>${r.sku}</td><td>${r.name}</td><td>${r.refDate || '-'}</td><td>${r.days ?? '-'}</td><td>${fmt(r.owedAmt || r.totalAmt)}</td><td><span class="badge ${r.status}">${statusLabel(r.status)}</span></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderAll() { renderLost(); renderReturns(); }
+
+if (!sellerId) {
+  document.body.innerHTML = '<p style="padding:40px;text-align:center">رقم البائع مفيش في الرابط. رجع لصفحة الربط.</p>';
+} else {
+  applyLang();
+  refreshStatus();
+}
+</script>
+</body>
+</html>
