@@ -4,9 +4,12 @@ const express = require('express');
 const crypto = require('crypto');
 const path = require('path');
 const { exchangeCodeForRefreshToken } = require('./lwa');
-const { saveSeller, getSeller, listSellers } = require('./store');
+const { saveSeller, getSeller, listSellers, saveSellerReport, getSellerReport } = require('./store');
+const { makeClient, pullReimbursements, pullReturns, pullLedger, pullFinances } = require('./reports');
+const { analyzeLost, analyzeReturns } = require('./analyze');
 
 const app = express();
+app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const PORT = process.env.PORT || 3000;
@@ -14,6 +17,7 @@ const APPLICATION_ID = process.env.SP_APPLICATION_ID; // amzn1.sp.solution.xxxx
 const CLIENT_ID = process.env.SP_CLIENT_ID;
 const CLIENT_SECRET = process.env.SP_CLIENT_SECRET;
 const REDIRECT_URI = process.env.REDIRECT_URI; // لازم يكون مطابق تماماً لما هو مسجّل عند أمازون
+const MARKETPLACE_ID = process.env.SP_MARKETPLACE_ID;
 
 function need(name, val) {
   if (!val) {
@@ -25,6 +29,7 @@ need('SP_APPLICATION_ID', APPLICATION_ID);
 need('SP_CLIENT_ID', CLIENT_ID);
 need('SP_CLIENT_SECRET', CLIENT_SECRET);
 need('REDIRECT_URI', REDIRECT_URI);
+need('SP_MARKETPLACE_ID', MARKETPLACE_ID);
 
 // ── خطوة 1: زرار "اربط حسابك" يودي هنا، فيحوّل البائع لصفحة موافقة أمازون ──
 app.get('/connect', (req, res) => {
@@ -65,25 +70,70 @@ app.get('/oauth/redirect', async (req, res) => {
   }
 });
 
-// ── صفحة بسيطة مؤقتة لكل بائع (هنطورها لواجهة كاملة بعد كده) ──
+// ── صفحة اللوحة الحقيقية لكل بائع ──
 app.get('/dashboard', (req, res) => {
   const sellerId = req.query.seller;
   const seller = sellerId ? getSeller(sellerId) : null;
+  if (!seller) return res.status(404).send('الحساب ده مش مربوط. ابدأ من صفحة الربط الأول.');
+  res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
 
-  if (!seller) {
-    return res.status(404).send('الحساب ده مش مربوط. ابدأ من صفحة الربط الأول.');
+// ── API: سحب تقرير معيّن لبائع معيّن وتخزينه ──
+app.post('/api/sync/:report', async (req, res) => {
+  const sellerId = req.query.seller;
+  const seller = sellerId ? getSeller(sellerId) : null;
+  if (!seller) return res.status(404).json({ error: 'الحساب مش مربوط' });
+
+  const sp = makeClient(seller.refreshToken);
+  const reportType = req.params.report;
+
+  try {
+    let data;
+    if (reportType === 'reimbursements') data = await pullReimbursements(sp, MARKETPLACE_ID);
+    else if (reportType === 'returns') data = await pullReturns(sp, MARKETPLACE_ID);
+    else if (reportType === 'ledger') data = await pullLedger(sp, MARKETPLACE_ID);
+    else if (reportType === 'finances') data = await pullFinances(sp);
+    else return res.status(400).json({ error: 'نوع تقرير غير معروف' });
+
+    saveSellerReport(sellerId, reportType, data);
+    res.json({ ok: true, count: Array.isArray(data) ? data.length : 0 });
+  } catch (e) {
+    console.error(`❌ فشل سحب ${reportType}:`, e.message);
+    res.status(500).json({ error: e.message });
   }
+});
 
-  res.send(`
-    <html dir="rtl" lang="ar">
-    <body style="font-family: sans-serif; padding: 40px; text-align: center;">
-      <h1>✅ تم ربط حسابك بنجاح</h1>
-      <p>رقم البائع: ${seller.sellingPartnerId}</p>
-      <p>تاريخ الربط: ${seller.connectedAt}</p>
-      <p style="color: #888;">(الواجهة الكاملة وزراير سحب البيانات جاية في الخطوة الجاية)</p>
-    </body>
-    </html>
-  `);
+// ── API: تشغيل التحليل على آخر بيانات محفوظة ──
+app.post('/api/run/lost', (req, res) => {
+  const sellerId = req.query.seller;
+  const ledger = getSellerReport(sellerId, 'ledger');
+  if (!ledger) return res.status(400).json({ error: 'لازم تسحب تقرير المخزون (ledger) الأول' });
+  const results = analyzeLost(ledger.data);
+  res.json({ results });
+});
+
+app.post('/api/run/returns', (req, res) => {
+  const sellerId = req.query.seller;
+  const finances = getSellerReport(sellerId, 'finances');
+  const returns = getSellerReport(sellerId, 'returns');
+  const reim = getSellerReport(sellerId, 'reimbursements');
+  if (!finances || !returns || !reim) {
+    return res.status(400).json({ error: 'لازم تسحب التقارير التلاتة الأول: finances, returns, reimbursements' });
+  }
+  const results = analyzeReturns(finances.data, returns.data, reim.data);
+  res.json({ results });
+});
+
+// ── API: حالة آخر سحب لكل تقرير (يستخدمها الفرونت إند يعرض "آخر تحديث") ──
+app.get('/api/status', (req, res) => {
+  const sellerId = req.query.seller;
+  const types = ['reimbursements', 'returns', 'ledger', 'finances'];
+  const status = {};
+  types.forEach(t => {
+    const r = getSellerReport(sellerId, t);
+    status[t] = r ? { fetchedAt: r.fetchedAt, count: Array.isArray(r.data) ? r.data.length : 0 } : null;
+  });
+  res.json(status);
 });
 
 app.get('/', (req, res) => {
