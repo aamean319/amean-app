@@ -43,4 +43,20 @@ function listSellers() {
   return Object.values(all);
 }
 
-module.exports = { getSeller, saveSeller, listSellers };
+// ── تخزين نتائج التقارير والتحليل لكل بائع لوحده ──
+function saveSellerReport(sellingPartnerId, reportType, data) {
+  const all = readAll();
+  if (!all[sellingPartnerId]) all[sellingPartnerId] = { sellingPartnerId };
+  if (!all[sellingPartnerId].reports) all[sellingPartnerId].reports = {};
+  all[sellingPartnerId].reports[reportType] = { data, fetchedAt: new Date().toISOString() };
+  writeAll(all);
+}
+
+function getSellerReport(sellingPartnerId, reportType) {
+  const all = readAll();
+  const rec = all[sellingPartnerId];
+  if (!rec || !rec.reports || !rec.reports[reportType]) return null;
+  return rec.reports[reportType];
+}
+
+module.exports = { getSeller, saveSeller, listSellers, saveSellerReport, getSellerReport };
