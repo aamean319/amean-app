@@ -3,8 +3,8 @@ require('dotenv').config();
 const express = require('express');
 const crypto = require('crypto');
 const path = require('path');
-const { exchangeCodeForRefreshToken } = require('./lib/lwa');
-const { saveSeller, getSeller, listSellers } = require('./lib/store');
+const { exchangeCodeForRefreshToken } = require('./lwa');
+const { saveSeller, getSeller, listSellers } = require('./store');
 
 const app = express();
 app.use(express.static(path.join(__dirname, 'public')));
